@@ -8,6 +8,7 @@ from selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED
 from selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
+from common.op_params import opParams
 
 TRAJECTORY_SIZE = 33
 CAMERA_OFFSET = 0.04
@@ -43,6 +44,7 @@ class LateralPlanner:
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
+    self.op_params = opParams()
 
   def reset_mpc(self, x0=np.zeros(4)):
     self.x0 = x0

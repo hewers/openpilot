@@ -1,5 +1,6 @@
 import numpy as np
 from numbers import Number
+from common.op_params import opParams
 
 from common.numpy_fast import clip, interp
 
@@ -23,6 +24,7 @@ class PIDController():
     self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
     self.speed = 0.0
+    self.live_tune = opParams()
 
     self.reset()
 
@@ -73,3 +75,16 @@ class PIDController():
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
+
+class LatPIDController(PIDController):
+  @property
+  def k_p(self):
+    override = self.live_tune.get('LAT_P_OVERRIDE')
+    if override:
+      return override
+    else:
+      return interp(self.speed, self._k_p[0], (0, self.live_tune.get('LAT_P')))
+
+  @property
+  def k_i(self):
+    return self.live_tune.get('LAT_I')
