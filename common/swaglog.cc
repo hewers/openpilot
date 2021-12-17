@@ -83,28 +83,10 @@ uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
 
 static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
                             char* msg_buf, const json11::Json::object &msg_j={}) {
+
   static SwaglogState s;
-
-  json11::Json::object log_j = json11::Json::object {
-    {"ctx", s.ctx_j},
-    {"levelnum", levelnum},
-    {"filename", filename},
-    {"lineno", lineno},
-    {"funcname", func},
-    {"created", seconds_since_epoch()}
-  };
-  if (msg_j.empty()) {
-    log_j["msg"] = msg_buf;
-  } else {
-    log_j["msg"] = msg_j;
-  }
-
-  std::string log_s;
-  log_s += (char)levelnum;
-  ((json11::Json)log_j).dump(log_s);
-  s.log(levelnum, filename, lineno, func, msg_buf, log_s);
-
   free(msg_buf);
+  return;
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,

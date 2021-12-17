@@ -23,6 +23,7 @@ def is_registered_device() -> bool:
 
 
 def register(show_spinner=False) -> str | None:
+  return UNREGISTERED_DONGLE_ID
   params = Params()
 
   IMEI = params.get("IMEI", encoding='utf8')

@@ -40,6 +40,7 @@ def manager_init() -> None:
     ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
+    ("DisablePowerDown", "0"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
@@ -87,14 +88,14 @@ def manager_init() -> None:
     os.environ['CLEAN'] = '1'
 
   # init logging
-  sentry.init(sentry.SentryProject.SELFDRIVE)
-  cloudlog.bind_global(dongle_id=dongle_id,
-                       version=build_metadata.openpilot.version,
-                       origin=build_metadata.openpilot.git_normalized_origin,
-                       branch=build_metadata.channel,
-                       commit=build_metadata.openpilot.git_commit,
-                       dirty=build_metadata.openpilot.is_dirty,
-                       device=HARDWARE.get_device_type())
+  # sentry.init(sentry.SentryProject.SELFDRIVE)
+  # cloudlog.bind_global(dongle_id=dongle_id,
+  #                      version=build_metadata.openpilot.version,
+  #                      origin=build_metadata.openpilot.git_normalized_origin,
+  #                      branch=build_metadata.channel,
+  #                      commit=build_metadata.openpilot.git_commit,
+  #                      dirty=build_metadata.openpilot.is_dirty,
+  #                      device=HARDWARE.get_device_type())
 
   # preimport all processes
   for p in managed_processes.values():
@@ -187,7 +188,7 @@ def main() -> None:
     manager_thread()
   except Exception:
     traceback.print_exc()
-    sentry.capture_exception()
+    # sentry.capture_exception()
   finally:
     manager_cleanup()
 
