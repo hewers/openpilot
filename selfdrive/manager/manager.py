@@ -9,7 +9,7 @@ from typing import List, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
-import openpilot.selfdrive.sentry as sentry
+# import openpilot.selfdrive.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
@@ -46,6 +46,7 @@ def manager_init() -> None:
     ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
+    ("DisablePowerDown", "0"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
@@ -96,14 +97,14 @@ def manager_init() -> None:
     os.environ['CLEAN'] = '1'
 
   # init logging
-  sentry.init(sentry.SentryProject.SELFDRIVE)
-  cloudlog.bind_global(dongle_id=dongle_id,
-                       version=get_version(),
-                       origin=get_normalized_origin(),
-                       branch=get_short_branch(),
-                       commit=get_commit(),
-                       dirty=is_dirty(),
-                       device=HARDWARE.get_device_type())
+  # sentry.init(sentry.SentryProject.SELFDRIVE)
+  # cloudlog.bind_global(dongle_id=dongle_id,
+  #                      version=get_version(),
+  #                      origin=get_normalized_origin(),
+  #                      branch=get_short_branch(),
+  #                      commit=get_commit(),
+  #                      dirty=is_dirty(),
+  #                      device=HARDWARE.get_device_type())
 
 
 def manager_prepare() -> None:
@@ -206,7 +207,7 @@ def main() -> None:
     manager_thread()
   except Exception:
     traceback.print_exc()
-    sentry.capture_exception()
+    # sentry.capture_exception()
   finally:
     manager_cleanup()
 
