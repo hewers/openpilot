@@ -24,6 +24,7 @@ def is_registered_device() -> bool:
 
 
 def register(show_spinner=False) -> Optional[str]:
+  return UNREGISTERED_DONGLE_ID
   params = Params()
   params.put("SubscriberInfo", HARDWARE.get_subscriber_info())
 

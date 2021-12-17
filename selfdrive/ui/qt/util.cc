@@ -29,13 +29,7 @@ QString getUserAgent() {
 }
 
 std::optional<QString> getDongleId() {
-  std::string id = Params().get("DongleId");
-
-  if (!id.empty() && (id != "UnregisteredDevice")) {
-    return QString::fromStdString(id);
-  } else {
     return {};
-  }
 }
 
 QMap<QString, QString> getSupportedLanguages() {
