@@ -59,6 +59,8 @@ class CarControllerParams:
     self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, max_regen_acceleration]
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
+STEER_THRESHOLD = CarControllerParams.STEER_DRIVER_ALLOWANCE / CarControllerParams.STEER_DRIVER_FACTOR
+
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
