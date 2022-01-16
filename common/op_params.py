@@ -59,6 +59,12 @@ class opParams:
                 "allowed_types": [float],
                 "live": True,
             },
+            "LAT_CURVE": {
+                "default": 1.,
+                "clip": [0., 2.],
+                "allowed_types": [float],
+                "live": True,
+            },
             "op_edit_live_mode": {
                 "default": True,
                 "description": "Start mode for opEdit.",

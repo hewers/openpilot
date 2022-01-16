@@ -2,7 +2,9 @@ import math
 
 from cereal import log
 from selfdrive.controls.lib.latcontrol import LatControl
-from selfdrive.controls.lib.pid import PIDController
+from selfdrive.controls.lib.pid import LatPIDController
+from common.op_params import opParams
+from common.conversions import Conversions as CV
 
 
 class LatControlPID(LatControl):
@@ -12,6 +14,7 @@ class LatControlPID(LatControl):
                              (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                              k_f=CP.lateralTuning.pid.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
+    self.live_tune = opParams()
 
   def reset(self):
     super().reset()
@@ -34,7 +37,19 @@ class LatControlPID(LatControl):
       self.pid.reset()
     else:
       # offset does not contribute to resistive torque
+
+      # torque to achieve steer angle
       steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
+
+      # torque to achieve steer angle / second
+      # near 0 angle, steer rate is proportional to steer command
+      # for ease of tuning, use deg/s for actuators.steer of 1.0
+      # LAT_CURVE_ZERO ~= 35
+      # LAT_CURVE_SPEED ~= 0.383
+      steer_rate_desired = math.degrees(VM.get_steer_from_curvature(-desired_curvature_rate, CS.vEgo, 0))
+      speed_mph =  CS.vEgo * CV.MS_TO_MPH
+      steer_rate_max = 0.0389837 * speed_mph**2 - 5.34858 * speed_mph + 223.831
+      steer_feedforward += self.live_tune.get("LAT_CURVE") * (steer_rate_desired / steer_rate_max)
 
       output_steer = self.pid.update(error, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo)
