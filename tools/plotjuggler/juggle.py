@@ -83,7 +83,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
-def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=None, ci=False):
+def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=None, ci=False, path=None):
   segment_start = 0
   if 'cabana' in route_or_segment_name:
     query = parse_qs(urlparse(route_or_segment_name).query)
@@ -153,6 +153,7 @@ if __name__ == "__main__":
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
   parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
+  parser.add_argument("--path", help="Path")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot (cabana share URL accepted)")
   parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot")
 
@@ -177,4 +178,8 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
+<<<<<<< HEAD
     juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.dbc, args.ci)
+=======
+    juggle_route(route_or_segment_name, args.segment_count, args.qlog, args.can, args.layout, args.dbc, args.path)
+>>>>>>> enough for plotjuggler, and replay works as-is

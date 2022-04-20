@@ -99,7 +99,7 @@ class Route:
       fullpath = os.path.join(data_dir, f)
       explorer_match = re.match(RE.EXPLORER_FILE, f)
       op_match = re.match(RE.OP_SEGMENT_DIR, f)
-
+      time_match = re.match(RE.LOCAL_NAME, f)
       if explorer_match:
         segment_name = explorer_match.group('segment_name')
         fn = explorer_match.group('file_name')
@@ -107,9 +107,13 @@ class Route:
           segment_files[segment_name].append((fullpath, fn))
       elif op_match and os.path.isdir(fullpath):
         segment_name = op_match.group('segment_name')
-        if segment_name.startswith(self.name.canonical_name):
+        if segment_name.startswith(self.name._time_str):
           for seg_f in os.listdir(fullpath):
             segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
+      elif time_match and os.path.isdir(fullpath):
+        segment_name = f
+        for seg_f in os.listdir(fullpath):
+          segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
       elif f == self.name.canonical_name:
         for seg_num in os.listdir(fullpath):
           if not seg_num.isdigit():
@@ -175,8 +179,13 @@ class Segment:
 class RouteName:
   def __init__(self, name_str: str):
     self._name_str = name_str
-    delim = next(c for c in self._name_str if c in ("|", "/"))
-    self._dongle_id, self._time_str = self._name_str.split(delim)
+    print(name_str)
+    if '|' in name_str:
+      delim = next(c for c in self._name_str if c in ("|", "/"))
+      self._dongle_id, self._time_str = self._name_str.split(delim)
+    else:
+      self._dongle_id = '0a59e4a79dd9a4fd'
+      self._time_str = name_str
 
     assert len(self._dongle_id) == 16, self._name_str
     assert len(self._time_str) == 20, self._name_str
