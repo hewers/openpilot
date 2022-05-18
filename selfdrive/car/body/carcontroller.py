@@ -56,8 +56,7 @@ class CarController:
 
       # Clip angle error, this is enough to get up from stands
       angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
-      angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
-      torque = self.balance_pid.update(angle_error, error_rate=angle_error_rate)
+      torque = self.balance_pid.update(angle_error)
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired

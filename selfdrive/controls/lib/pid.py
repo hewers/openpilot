@@ -49,18 +49,18 @@ class PIDController():
     self.f = 0.0
     self.control = 0
 
-  def update(self, error, error_rate=0.0, speed=0.0, override=False, feedforward=0., freeze_integrator=False):
+  def update(self, error, speed=0.0, override=False, feedforward=0., freeze_integrator=False):
     self.speed = speed
 
     self.p = float(error) * self.k_p
     self.f = feedforward * self.k_f
-    self.d = error_rate * self.k_d
+    control = self.p + self.f
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       i = self.i + error * self.k_i * self.i_rate
-      control = self.p + i + self.d + self.f
+      control += i
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
@@ -69,7 +69,11 @@ class PIDController():
          not freeze_integrator:
         self.i = i
 
-    control = self.p + self.i + self.d + self.f
+    # Avoid derivative kick from step change in setpoint
+    # Dampen control rate by assuming setpoint is constant
+    control = clip(control, self.neg_limit, self.pos_limit)
+    self.d = (self.control - control) * self.k_d
+    control += self.d
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
