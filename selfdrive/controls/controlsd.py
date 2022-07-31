@@ -29,6 +29,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
 from system.hardware import HARDWARE
 from selfdrive.manager.process_config import managed_processes
+from math import sin
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -182,6 +183,7 @@ class Controls:
     self.desired_curvature_rate = 0.0
     self.experimental_mode = False
     self.v_cruise_helper = VCruiseHelper(self.CP)
+    self.pitch_ema = 0.0
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -577,6 +579,18 @@ class Controls:
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.any(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
+
+    # EXPERIMENTAL
+    # forecast pitch then adjust accel->gasbrake for longitudinal gravity
+    ema = 1/10
+    model_pitch = current_pitch = 0.
+    if len(self.sm['liveLocationKalman'].calibratedOrientationNED.value):
+      current_pitch = self.sm['liveLocationKalman'].calibratedOrientationNED.value[1]
+      if len(self.sm['modelV2'].position.y):
+        model_pitch = self.sm['modelV2'].position.y[10]
+    future_pitch = model_pitch + current_pitch
+    self.pitch_ema = future_pitch * ema + self.pitch_ema * (1 - ema)
+    CC.pitchDEPRECATED = -9.8 * sin(self.pitch_ema)
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
