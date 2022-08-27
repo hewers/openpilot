@@ -582,12 +582,12 @@ class Controls:
 
     # EXPERIMENTAL
     # forecast pitch then adjust accel->gasbrake for longitudinal gravity
-    ema = 1/10
+    ema = 1/20
     model_pitch = current_pitch = 0.
     if len(self.sm['liveLocationKalman'].calibratedOrientationNED.value):
       current_pitch = self.sm['liveLocationKalman'].calibratedOrientationNED.value[1]
-      if len(self.sm['modelV2'].position.y):
-        model_pitch = self.sm['modelV2'].position.y[10]
+      # if len(self.sm['modelV2'].position.y):
+      #   model_pitch = self.sm['modelV2'].position.y[10]
     future_pitch = model_pitch + current_pitch
     self.pitch_ema = future_pitch * ema + self.pitch_ema * (1 - ema)
     CC.pitchDEPRECATED = -9.8 * sin(self.pitch_ema)
