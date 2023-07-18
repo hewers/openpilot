@@ -152,7 +152,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 #else
     left_widget->addWidget(new QWidget);
 #endif
-    left_widget->addWidget(new PrimeAdWidget);
+    // left_widget->addWidget(new PrimeAdWidget);
     left_widget->setStyleSheet("border-radius: 10px;");
 
     left_widget->setCurrentIndex(uiState()->hasPrime() ? 0 : 1);
@@ -169,13 +169,13 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     right_widget->setFixedWidth(750);
     right_column->setSpacing(30);
 
-    ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
-    QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
-    right_column->addWidget(experimental_mode, 1);
+    // ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
+    // QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
+    // right_column->addWidget(experimental_mode, 1);
 
-    SetupWidget *setup_widget = new SetupWidget;
-    QObject::connect(setup_widget, &SetupWidget::openSettings, this, &OffroadHome::openSettings);
-    right_column->addWidget(setup_widget, 1);
+    // SetupWidget *setup_widget = new SetupWidget;
+    // QObject::connect(setup_widget, &SetupWidget::openSettings, this, &OffroadHome::openSettings);
+    // right_column->addWidget(setup_widget, 1);
 
     home_layout->addWidget(right_widget, 1);
   }
