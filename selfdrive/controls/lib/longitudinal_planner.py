@@ -97,14 +97,16 @@ class LongitudinalPlanner:
     v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
-    long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
+    long_control_state = sm['controlsState'].longControlState
+    long_control_off = LongCtrlState.off == long_control_state
+    long_control_coasting = LongCtrlState.pidCoast == long_control_state
     force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['controlsState'].enabled
 
-    # No change cost when user is controlling the speed, or when standstill
-    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
+    # No change cost when: user override, standstill, or coasting.
+    prev_accel_constraint = not (reset_state or sm['carState'].standstill or long_control_coasting)
 
     if self.mpc.mode == 'acc':
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
@@ -130,10 +132,10 @@ class LongitudinalPlanner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     self.mpc.set_weights(prev_accel_constraint, personality=self.personality)
-    self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
+    self.mpc.set_modifiers(v_cruise, accel_limits_turns, long_control_state)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=self.personality)
+    self.mpc.update(sm['radarState'], x, v, a, j, personality=self.personality)
 
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
