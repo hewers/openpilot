@@ -69,6 +69,7 @@ class LongControl:
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     speeds = long_plan.speeds
+    coast = 'cruise' == long_plan.longitudinalPlanSource
     if len(speeds) == CONTROL_N:
       v_target_now = interp(t_since_plan, CONTROL_N_T_IDX, speeds)
       a_target_now = interp(t_since_plan, CONTROL_N_T_IDX, long_plan.accels)
@@ -89,7 +90,7 @@ class LongControl:
       v_target_1sec = 0.0
       a_target = 0.0
 
-    self.pid.neg_limit = accel_limits[0]
+    self.pid.neg_limit = 0 if coast else accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
     output_accel = self.last_output_accel
