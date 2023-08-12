@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import numpy as np
-from cereal import log
+from cereal import log, car
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from system.swaglog import cloudlog
@@ -9,6 +9,9 @@ from system.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.car.interfaces import ACCEL_MIN
 from selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from common.conversions import Conversions as CV
+
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -324,15 +327,35 @@ class LongitudinalMpc:
     lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
-  def set_accel_limits(self, min_a, max_a):
-    # TODO this sets a max accel limit, but the minimum limit is only for cruise decel
-    # needs refactor
-    self.cruise_min_a = min_a
-    self.max_a = max_a
+  def set_long_params(self, v_cruise, accel_limits, long_control_state):
+    self.cruise_min_a = accel_limits[0]
+    self.max_a = accel_limits[1]
+    self.v_cruise = v_cruise
+    self.long_control_state = long_control_state
+
+  def get_v_cruise_clipped(self, v_ego, a_ego):
+    v_target = self.v_cruise
+    a_min, a_max = self.cruise_min_a, self.max_a
+    if LongCtrlState.pidGas == self.long_control_state:
+      # all gas no brakes
+      a_min = 0.0
+    elif LongCtrlState.pidCoast == self.long_control_state:
+      # no gas no brakes: continue steady state
+      v_target = v_ego
+      a_min = a_max = a_ego
+    elif LongCtrlState.pidBrake == self.long_control_state:
+      # no gas all brakes
+      v_target += 10 * CV.MPH_TO_MS
+      a_max = 0
+
+    v_lower = v_ego + (T_IDXS * a_min * 1.05)
+    v_upper = v_ego + (T_IDXS * a_max * 1.05)
+    return np.clip(v_target * np.ones(N+1), v_lower, v_upper)
 
   def update(self, radarstate, v_cruise, x, v, a, j, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
+    a_ego = self.x0[2]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -351,13 +374,8 @@ class LongitudinalMpc:
     if self.mode == 'acc':
       self.params[:,5] = LEAD_DANGER_FACTOR
 
-      # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
-      # when the leads are no factor.
-      v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
-      v_upper = v_ego + (T_IDXS * self.max_a * 1.05)
-      v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                                 v_lower,
-                                 v_upper)
+      # Fake obstacle for smooth plan without a lead
+      v_cruise_clipped = self.get_v_cruise_clipped(v_ego, a_ego)
       cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
       x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
       self.source = SOURCES[np.argmin(x_obstacles[0])]

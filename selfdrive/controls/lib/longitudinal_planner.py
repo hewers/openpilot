@@ -132,7 +132,7 @@ class LongitudinalPlanner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     self.mpc.set_weights(prev_accel_constraint, personality=self.personality)
-    self.mpc.set_modifiers(v_cruise, accel_limits_turns, long_control_state)
+    self.mpc.set_long_params(v_cruise, accel_limits_turns, long_control_state)
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
     self.mpc.update(sm['radarState'], x, v, a, j, personality=self.personality)
