@@ -9,7 +9,8 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             v_target_1sec, brake_pressed, cruise_standstill):
+                             v_target_1sec, brake_pressed, cruise_standstill,
+                             last_output, plan_source):
   # Ignore cruise standstill if car has a gas interceptor
   cruise_standstill = cruise_standstill and not CP.enableGasInterceptor
   accelerating = v_target_1sec > v_target
@@ -25,27 +26,59 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
                         not cruise_standstill and
                         not brake_pressed)
   started_condition = v_ego > CP.vEgoStarting
+  last_gas = last_output > 0.0
+  last_coast = last_output == 0.0
+  last_brake = last_output < 0.0
+  state_off = long_control_state == LongCtrlState.off
+  state_lead = long_control_state == LongCtrlState.pidLead
+  state_gas = long_control_state == LongCtrlState.pidGas
+  state_coast = long_control_state == LongCtrlState.pidCoast
+  state_brake = long_control_state == LongCtrlState.pidBrake
 
   if not active:
     long_control_state = LongCtrlState.off
 
   else:
-    if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
-      long_control_state = LongCtrlState.pid
+    if long_control_state in (LongCtrlState.off, LongCtrlState.pidLead, LongCtrlState.pidGas, LongCtrlState.pidCoast, LongCtrlState.pidBrake):
+      if plan_source == 'cruise':
+        if state_off or state_lead:
+          # Off | Lead -> Gas | Coast | Brake
+          if last_gas:
+            long_control_state = LongCtrlState.pidGas
+          elif last_coast:
+            long_control_state = LongCtrlState.pidCoast
+          elif last_brake:
+            long_control_state = LongCtrlState.pidBrake
+        if state_gas or state_brake:
+          if last_coast:
+            # Gas | Brake -> Coast
+            long_control_state = LongCtrlState.pidCoast
+        if state_coast:
+          if v_ego < v_target_1sec + 0.5:
+            # Coast -> Gas
+            long_control_state = LongCtrlState.pidGas
+          elif v_ego < v_target_1sec - 0.5:
+            # Coast -> Brake
+            long_control_state = LongCtrlState.pidBrake
+      # plan source not 'cruise'
+      else:
+        # * -> Lead
+        long_control_state = LongCtrlState.pidLead
       if stopping_condition:
+        # * -> Stopping
         long_control_state = LongCtrlState.stopping
 
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition and CP.startingState:
         long_control_state = LongCtrlState.starting
       elif starting_condition:
-        long_control_state = LongCtrlState.pid
+        long_control_state = LongCtrlState.pidLead
 
     elif long_control_state == LongCtrlState.starting:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
       elif started_condition:
-        long_control_state = LongCtrlState.pid
+        long_control_state = LongCtrlState.pidLead
 
   return long_control_state
 
@@ -89,13 +122,10 @@ class LongControl:
       v_target_1sec = 0.0
       a_target = 0.0
 
-    self.pid.neg_limit = accel_limits[0]
-    self.pid.pos_limit = accel_limits[1]
-
     output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        v_target, v_target_1sec, CS.brakePressed,
-                                                       CS.cruiseState.standstill)
+                                                       CS.cruiseState.standstill, output_accel, long_plan.source)
 
     if self.long_control_state == LongCtrlState.off:
       self.reset(CS.vEgo)
@@ -111,8 +141,15 @@ class LongControl:
       output_accel = self.CP.startAccel
       self.reset(CS.vEgo)
 
-    elif self.long_control_state == LongCtrlState.pid:
+    elif self.long_control_state in (LongCtrlState.pidLead,
+                                     LongCtrlState.pidGas,
+                                     LongCtrlState.pidCoast,
+                                     LongCtrlState.pidBrake):
       self.v_pid = v_target_now
+      allow_gas = self.long_control_state in (LongCtrlState.pidLead, LongCtrlState.pidGas)
+      allow_brake = self.long_control_state in (LongCtrlState.pidLead,LongCtrlState.pidBrake)
+      self.pid.neg_limit = accel_limits[0] if allow_brake else 0
+      self.pid.pos_limit = accel_limits[1] if allow_gas else 0
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
