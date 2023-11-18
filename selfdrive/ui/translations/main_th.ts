@@ -1130,6 +1130,14 @@ This may take up to a minute.</source>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>เปิดระบบควบคุมการเร่ง/เบรคโดย openpilot (alpha) เพื่อเปิดใช้งานโหมดทดลอง</translation>
     </message>
+    <message>
+        <source>Use the minimum steering and engage speeds to enable openpilot. Hi Ellie!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Set/Resume Speed</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Updater</name>

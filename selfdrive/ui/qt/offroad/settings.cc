@@ -27,6 +27,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
     {
+      "SetResumeSpeedToggle",
+      tr("Use Set/Resume Speed"),
+      tr("Use the minimum steering and engage speeds to enable openpilot. Hi Ellie!"),
+      "../assets/offroad/icon_speed_limit.png",
+    },
+    {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),

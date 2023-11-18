@@ -16,6 +16,8 @@ from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_fri
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
+from openpilot.common.params import Params
+
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
@@ -84,6 +86,8 @@ class CarInterfaceBase(ABC):
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+
+    self.params = Params()
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):

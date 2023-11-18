@@ -109,10 +109,12 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
       ret.radarUnavailable = RADAR_HEADER_MSG not in fingerprint[CanBus.OBSTACLE] and not docs
-      ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
-      # supports stop and go, but initial engage must (conservatively) be above 18mph
-      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
-      ret.minSteerSpeed = 7 * CV.MPH_TO_MS
+      ret.pcmCruise = False  # disable stock non-adaptive cruise control
+      # 2017 has stop-and-go by spamming resume
+      # SET allowed >= minEnableSpeed
+      ret.minEnableSpeed = 27 * CV.KPH_TO_MS
+      # RESUME allowed >= minSteerSpeed
+      ret.minSteerSpeed = 8 * CV.KPH_TO_MS
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -262,20 +264,27 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
+
+    # Enable on RESUME_ACCEL rising edge
     if not self.CP.pcmCruise:
       if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
-        events.add(EventName.buttonEnable)
+          events.add(EventName.buttonEnable)
 
-    # Enabling at a standstill with brake is allowed
-    # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-    below_min_enable_speed = ret.vEgo < self.CP.minEnableSpeed or self.CS.moving_backward
-    if below_min_enable_speed and not (ret.standstill and ret.brake >= 20 and
-                                       self.CP.networkLocation == NetworkLocation.fwdCamera):
-      events.add(EventName.belowEngageSpeed)
+    if self.params.get_bool("SetResumeSpeedToggle"):
+      # Enabling at a standstill with brake is allowed
+      # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
+      below_min_enable_speed = ret.vEgo < self.CP.minEnableSpeed or self.CS.moving_backward
+      if below_min_enable_speed and not (ret.standstill and ret.brake >= 20 and
+                                        self.CP.networkLocation == NetworkLocation.fwdCamera):
+        events.add(EventName.belowEngageSpeed)
+        if ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward:
+          events.add(EventName.belowResumeSpeed)
+      if ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward:
+        events.add(EventName.belowSteerSpeed)
+
+
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
-    if ret.vEgo < self.CP.minSteerSpeed:
-      events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
 
