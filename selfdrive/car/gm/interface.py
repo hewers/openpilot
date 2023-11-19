@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = False  # disable stock non-adaptive cruise control
       # 2017 has stop-and-go by spamming resume
       # SET allowed >= minEnableSpeed
-      ret.minEnableSpeed = 27 * CV.KPH_TO_MS
+      ret.minEnableSpeed = 25 * CV.KPH_TO_MS
       # RESUME allowed >= minSteerSpeed
       ret.minSteerSpeed = 8 * CV.KPH_TO_MS
 
@@ -260,7 +260,7 @@ class CarInterface(CarInterfaceBase):
       ret.buttonEvents = create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT,
                                               unpressed_btn=CruiseButtons.UNPRESS)
 
-    # The ECM allows enabling on falling edge of set, but only rising edge of resume
+    # The ECM allows enabling on falling edge of SET_DECEL, but only rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
@@ -269,22 +269,22 @@ class CarInterface(CarInterfaceBase):
     if not self.CP.pcmCruise:
       if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
           events.add(EventName.buttonEnable)
+    
+    if ret.cruiseState.standstill:
+      events.add(EventName.resumeRequired)
 
+    # debug toggle allows set/resume at any speed
     if self.params.get_bool("SetResumeSpeedToggle"):
-      # Enabling at a standstill with brake is allowed
-      # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
       below_min_enable_speed = ret.vEgo < self.CP.minEnableSpeed or self.CS.moving_backward
+      below_min_steer_speed = ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward
+      
+      # Enabling at a standstill with brake is allowed for Bolt
       if below_min_enable_speed and not (ret.standstill and ret.brake >= 20 and
                                         self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
-        if ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward:
-          events.add(EventName.belowResumeSpeed)
-      if ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward:
+      if below_min_steer_speed:
+        events.add(EventName.belowResumeSpeed)
         events.add(EventName.belowSteerSpeed)
-
-
-    if ret.cruiseState.standstill:
-      events.add(EventName.resumeRequired)
 
     ret.events = events.to_msg()
 
