@@ -260,6 +260,9 @@ class CarInterface(CarInterfaceBase):
       ret.buttonEvents = create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT,
                                               unpressed_btn=CruiseButtons.UNPRESS)
 
+    below_min_enable_speed = ret.vEgo < self.CP.minEnableSpeed or self.CS.moving_backward
+    below_min_steer_speed = ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward
+
     # The ECM allows enabling on falling edge of SET_DECEL, but only rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
                                                          GearShifter.eco, GearShifter.manumatic],
@@ -268,23 +271,23 @@ class CarInterface(CarInterfaceBase):
     # Enable on RESUME_ACCEL rising edge
     if not self.CP.pcmCruise:
       if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
-          events.add(EventName.buttonEnable)
+          if below_min_steer_speed and self.params.get_bool("SetResumeSpeedToggle"):
+            events.add(EventName.belowResumeSpeed)
+          else:
+            events.add(EventName.buttonEnable)
     
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
 
     # debug toggle allows set/resume at any speed
-    if self.params.get_bool("SetResumeSpeedToggle"):
-      below_min_enable_speed = ret.vEgo < self.CP.minEnableSpeed or self.CS.moving_backward
-      below_min_steer_speed = ret.vEgo < self.CP.minSteerSpeed or self.CS.moving_backward
-      
+    if self.params.get_bool("SetResumeSpeedToggle"):      
       # Enabling at a standstill with brake is allowed for Bolt
       if below_min_enable_speed and not (ret.standstill and ret.brake >= 20 and
                                         self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
-      if below_min_steer_speed:
-        events.add(EventName.belowResumeSpeed)
-        events.add(EventName.belowSteerSpeed)
+        
+    if below_min_steer_speed:
+      events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
 
