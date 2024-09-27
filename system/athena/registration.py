@@ -22,6 +22,7 @@ def is_registered_device() -> bool:
 
 
 def register(show_spinner=False) -> str | None:
+  return None
   """
   All devices built since March 2024 come with all
   info stored in /persist/. This is kept around

@@ -42,6 +42,7 @@ def set_tag(key: str, value: str) -> None:
 
 
 def init(project: SentryProject) -> bool:
+  return False
   build_metadata = get_build_metadata()
   # forks like to mess with this, so double check
   comma_remote = build_metadata.openpilot.comma_remote and "commaai" in build_metadata.openpilot.git_origin

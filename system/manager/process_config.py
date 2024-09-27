@@ -4,7 +4,7 @@ import operator
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
-from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from openpilot.system.manager.process import PythonProcess, NativeProcess#, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -61,12 +61,12 @@ def and_(*fns):
   return lambda *args: operator.and_(*(fn(*args) for fn in fns))
 
 procs = [
-  DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
+  # DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
-  PythonProcess("logmessaged", "system.logmessaged", always_run),
+  # NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
+  # PythonProcess("logmessaged", "system.logmessaged", always_run),
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
@@ -98,10 +98,10 @@ procs = [
   PythonProcess("maneuversd", "tools.longitudinal_maneuvers.maneuversd", long_maneuver),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
-  PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC),
-  PythonProcess("uploader", "system.loggerd.uploader", always_run),
-  PythonProcess("statsd", "system.statsd", always_run),
+  # PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
+  # PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC),
+  # PythonProcess("uploader", "system.loggerd.uploader", always_run),
+  # PythonProcess("statsd", "system.statsd", always_run),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
