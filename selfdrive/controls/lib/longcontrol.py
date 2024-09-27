@@ -56,9 +56,9 @@ class LongControl:
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, CS, a_target, should_stop, accel_limits):
+  def update(self, active, CS, a_target, should_stop, accel_limits, is_cruise):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
-    self.pid.neg_limit = accel_limits[0]
+    self.pid.neg_limit = 0 if is_cruise else accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
 
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
