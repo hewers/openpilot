@@ -70,13 +70,13 @@ def manager_init() -> None:
   params.put_bool("IsReleaseBranch", build_metadata.release_channel)
 
   # set dongle id
-  reg_res = register(show_spinner=True)
-  if reg_res:
-    dongle_id = reg_res
-  else:
-    serial = params.get("HardwareSerial")
-    raise Exception(f"Registration failed for device {serial}")
-  os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
+  # reg_res = register(show_spinner=True)
+  # if reg_res:
+  #   dongle_id = reg_res
+  # else:
+  #   serial = params.get("HardwareSerial")
+  #   raise Exception(f"Registration failed for device {serial}")
+  # os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
   os.environ['GIT_ORIGIN'] = build_metadata.openpilot.git_normalized_origin # Needed for swaglog
   os.environ['GIT_BRANCH'] = build_metadata.channel # Needed for swaglog
   os.environ['GIT_COMMIT'] = build_metadata.openpilot.git_commit # Needed for swaglog
@@ -85,14 +85,14 @@ def manager_init() -> None:
     os.environ['CLEAN'] = '1'
 
   # init logging
-  sentry.init(sentry.SentryProject.SELFDRIVE)
-  cloudlog.bind_global(dongle_id=dongle_id,
-                       version=build_metadata.openpilot.version,
-                       origin=build_metadata.openpilot.git_normalized_origin,
-                       branch=build_metadata.channel,
-                       commit=build_metadata.openpilot.git_commit,
-                       dirty=build_metadata.openpilot.is_dirty,
-                       device=HARDWARE.get_device_type())
+  # sentry.init(sentry.SentryProject.SELFDRIVE)
+  # cloudlog.bind_global(dongle_id=dongle_id,
+  #                      version=build_metadata.openpilot.version,
+  #                      origin=build_metadata.openpilot.git_normalized_origin,
+  #                      branch=build_metadata.channel,
+  #                      commit=build_metadata.openpilot.git_commit,
+  #                      dirty=build_metadata.openpilot.is_dirty,
+  #                      device=HARDWARE.get_device_type())
 
   # preimport all processes
   for p in managed_processes.values():
